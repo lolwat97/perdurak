@@ -8,12 +8,27 @@ class CardSuit(Enum):
     CLUBS = 2
     SPADES = 3
 
+    def __str__(self):
+        return self.name
+
 
 class CardRank(Enum):
+    TWO = 2
+    THREE = 3
+    FOUR = 4
+    FIVE = 5
+    SIX = 6
+    SEVEN = 7
+    EIGHT = 8
+    NINE = 9
+    TEN = 10
     JACK = 11
     QUEEN = 12
     KING = 13
     ACE = 14
+
+    def __str__(self):
+        return self.name
 
 
 class Card:
@@ -22,7 +37,7 @@ class Card:
         self.rank = rank
 
     def __str__(self):
-        return str(self.suit) + ' of ' + str(self.rank)
+        return str(self.suit) + ' OF ' + str(self.rank)
 
 
 class Deck:
@@ -36,7 +51,7 @@ class Deck:
         else:
             cardRange = range(6, 15)
 
-        deck = [Card(x, y) for x, y in itertools.product(cardRange, CardSuit)]
+        deck = [Card(x, y) for x, y in itertools.product(CardRank, CardSuit)]
         random.shuffle(deck)
         
         return deck
