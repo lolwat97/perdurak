@@ -66,11 +66,19 @@ class PerdurakState:
     def fillWithPlayers(self, players = 4):
         self.substates = [PerdurakPlayerSubState() for x in range(players)]
 
+    def dealCards(self, cardsEach = 6):
+        for substate in self.substates:
+            substate.takeCard(self.deck, cardsEach)
+
 
 class PerdurakSubState:
     def __init__(self):
         self.cards = list()
         self.isActive = False
+
+    def takeCard(self, deck, number = 1):
+        for i in range(number):
+            self.cards.append(deck.cards.pop())
 
 
 class PerdurakPlayerSubState(PerdurakSubState):
@@ -93,9 +101,14 @@ class PerdurakScreen:
 
     def draw(self, state):
         self.drawTrump(state)
+        self.drawPlayerCards(state, 0)
 
     def drawTrump(self, state):
         print(state.deck.trump)
+
+    def drawPlayerCards(self, state, playerNumber):
+        for card in state.substates[playerNumber].cards.sort():
+            print(card)
 
 
 
@@ -105,4 +118,5 @@ class PerdurakApp:
         self.perdurakState = PerdurakState(humanPlayers = True, players = 3)
 
     def run(self):
+        self.perdurakState.dealCards(6)
         self.perdurakScreen.draw(self.perdurakState)
