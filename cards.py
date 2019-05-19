@@ -41,6 +41,9 @@ class Card:
         self.suit = suit
         self.rank = rank
 
+    def fromTableCard(tableCard):
+        return Card(tableCard.suit, tableCard.rank)
+
     def __str__(self):
         return str(self.suit) + ' OF ' + str(self.rank)
 

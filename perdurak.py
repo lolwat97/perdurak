@@ -20,10 +20,35 @@ class Deck:
         
         return deck
 
+class Table:
+    def __init__(self):
+        self.cards = []
+
+    def onOffenseCardPut(self, card):
+        tableCard = TableCard.fromCard(card, isCovered = False)
+        self.cards.append(tableCard)
+
+    def onDefenseCardPut(self, card, coveredTableCard):
+        tableCard = TableCard.fromCard(card, isCovered = True)
+        self.cards.append(TableCard)
+        coveredTableCard.isCovered = True
+
+class TableCard(Card):
+    def __init__(self, suit, rank, isCovered = False):
+        Card.__init__(self, suit, rank)
+        self.isCovered = isCovered
+
+    def fromCard(card, isCovered = False):
+        return TableCard(card.suit, card.rank, isCovered)
+
+    def __str__(self):
+        return str(self.suit) + ' OF ' + str(self.rank) + (" [X]" if self.isCovered else " [ ]")
+
 class PerdurakState:
     def __init__(self, humanPlayers = True, players = 4):
         self.substates = list()
         self.deck = Deck(fullDeck = True)
+        self.table = Table()
         if humanPlayers:
             self.fillWithPlayers(players)
 
@@ -44,6 +69,19 @@ class PerdurakSubState:
         for i in range(number):
             self.cards.append(deck.cards.pop())
         self.cards.sort()
+
+    def takeTableCards(self, table):
+        for card in table.cards:
+            self.cards.append(Card.fromTableCard(card))
+            table.cards.remove(card)
+
+    def putCard(self, table, card):
+        table.onOffenseCardPut(card)
+        self.cards.remove(card)
+
+    def defendWithCard(self, table, card, coveredCard):
+        table.onDefenseCardPut(card, coveredCard)
+        self.cards.remove(card)
 
 
 class PerdurakPlayerSubState(PerdurakSubState):
@@ -66,14 +104,28 @@ class PerdurakScreen:
 
     def draw(self, state):
         self.drawTrump(state)
-        self.drawPlayerCards(state, 0)
+        for playerNumber in range(len(state.substates)):
+            self.drawSpacer()
+            self.drawPlayerCards(state, playerNumber)
+        self.drawSpacer()
+        self.drawTableCards(state)
 
     def drawTrump(self, state):
+        print("The trump is")
         print(state.deck.trump)
 
     def drawPlayerCards(self, state, playerNumber):
+        print("Player " + str(playerNumber) + "'s cards are")
         for card in state.substates[playerNumber].cards:
             print(card)
+
+    def drawTableCards(self, state):
+        print("Cards on table:")
+        for card in state.table.cards:
+            print(card)
+
+    def drawSpacer(self):
+        print("------------------")
 
 
 
@@ -84,4 +136,6 @@ class PerdurakApp:
 
     def run(self):
         self.perdurakState.dealCards(6)
+        self.perdurakState.substates[0].putCard(self.perdurakState.table, self.perdurakState.substates[0].cards[0])
+        self.perdurakState.substates[0].takeTableCards(self.perdurakState.table)
         self.perdurakScreen.draw(self.perdurakState)
