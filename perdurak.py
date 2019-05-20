@@ -58,6 +58,7 @@ class PerdurakState:
         self.deck = Deck(fullDeck = True)
         self.table = Table()
         self.tableChangeFlag = False
+        self.switchFlag = False
         if humanPlayers:
             self.fillWithPlayers(players)
 
@@ -196,8 +197,9 @@ class PerdurakApp:
         while self.perdurakState.deck.cards:
             for playerNumber in range(len(self.perdurakState.substates)):
                 self.perdurakState.topUpCards(6)
-                self.perdurakState.tableChangeFlag = True
-                self.perdurakState.table.cards = [] # поменять, если перевел
+                if not self.perdurakState.switchFlag:
+                    self.perdurakState.table.cards = [] # поменять, если перевел
+                    self.perdurakState.tableChangeFlag = True
                 while self.perdurakState.tableChangeFlag == True:
                     self.perdurakState.tableChangeFlag = False
                     attackingPlayer = playerNumber
@@ -225,17 +227,33 @@ class PerdurakApp:
                     self.perdurakState.substates[attackingPlayerNumber].putCard(self.perdurakState.table, validCards[int(userInput)])
                     self.perdurakState.tableChangeFlag = True
             except ValueError:
-                print("Not a number though")
+                pass
 
     def defendLoop(self, defendingPlayerNumber):
         userInput = None
+        switchValidFlag = True
         while userInput != "n":
             if self.perdurakState.table.allCardsAreCovered():
                 break
             print(userInput)
             print("Player " + str(defendingPlayerNumber) + " is defending.")
-            self.perdurakScreen.draw(self.perdurakState, defendingPlayerNumber, isInOffense = False)
-            userInput = input("Choose a card to defend against, n to take all cards")
+            validSwitchCards = MoveChecker.getValidOffenseCards(self.perdurakState.table, self.perdurakState.deck.trump, self.perdurakState.substates[defendingPlayerNumber].cards)
+            if validSwitchCards:
+                self.perdurakScreen.draw(self.perdurakState, defendingPlayerNumber, isInOffense = True)
+            else:
+                self.perdurakScreen.draw(self.perdurakState, defendingPlayerNumber, isInOffense = False)
+            if switchValidFlag and validSwitchCards:
+                userInput = input("Choose a card to defend against, n to take all cards, s to switch")
+                if userInput == "s":
+                    userInput = input("Choose a card to perform a switch: ")
+                    try:
+                        self.perdurakState.substates[defendingPlayerNumber].putCard(self.perdurakState.table, validSwitchCards[int(userInput)])
+                        self.perdurakState.switchFlag = True
+                        break
+                    except ValueError:
+                        pass
+            else:
+                userInput = input("Choose a card to defend against, n to take all cards")
             try:
                 if int(userInput) < len(self.perdurakState.table.cards) and not self.perdurakState.table.cards[int(userInput)].isCovered:
                     coveredCard = int(userInput)
@@ -246,9 +264,12 @@ class PerdurakApp:
                         coveringCard = int(userInput)
                         self.perdurakState.substates[defendingPlayerNumber].defendWithCard(self.perdurakState.table, validCards[int(userInput)], self.perdurakState.table.cards[coveredCard])
                         self.perdurakState.tableChangeFlag = True
+                        switchValidFlag = False
             except ValueError:
-                print("Not a number though")
-        if not self.perdurakState.table.allCardsAreCovered():
+                pass
+        if self.perdurakState.switchFlag:
+            return True
+        if not self.perdurakState.table.allCardsAreCovered() and not self.perdurakState.switchFlag:
             self.perdurakState.substates[defendingPlayerNumber].takeTableCards(self.perdurakState.table)
             return True
         else:
