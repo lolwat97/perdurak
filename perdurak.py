@@ -217,7 +217,6 @@ class PerdurakApp:
     def attackLoop(self, attackingPlayerNumber, defendingPlayerNumber):
         userInput = None
         while self.perdurakState.table.getUncoveredCardsNumber() <= len(self.perdurakState.substates[defendingPlayerNumber].cards) and (userInput != "n" and MoveChecker.getValidOffenseCards(self.perdurakState.table, self.perdurakState.deck.trump, self.perdurakState.substates[attackingPlayerNumber].cards) or not self.perdurakState.table.cards):
-            print(userInput)
             print("Player " + str(attackingPlayerNumber) + " is attacking player " + str(defendingPlayerNumber))
             self.perdurakScreen.draw(self.perdurakState, attackingPlayerNumber, isInOffense = True)
             userInput = input("Choose card to attack with, n to proceed")
@@ -228,6 +227,8 @@ class PerdurakApp:
                     self.perdurakState.tableChangeFlag = True
             except ValueError:
                 pass
+            except IndexError:
+                print("Value is out of bounds.")
 
     def defendLoop(self, defendingPlayerNumber):
         userInput = None
@@ -235,7 +236,6 @@ class PerdurakApp:
         while userInput != "n":
             if self.perdurakState.table.allCardsAreCovered():
                 break
-            print(userInput)
             print("Player " + str(defendingPlayerNumber) + " is defending.")
             validSwitchCards = MoveChecker.getValidOffenseCards(self.perdurakState.table, self.perdurakState.deck.trump, self.perdurakState.substates[defendingPlayerNumber].cards)
             if validSwitchCards:
@@ -252,6 +252,8 @@ class PerdurakApp:
                         break
                     except ValueError:
                         pass
+                    except IndexError:
+                        print("Value is out of bounds.")
             else:
                 userInput = input("Choose a card to defend against, n to take all cards")
             try:
@@ -267,6 +269,8 @@ class PerdurakApp:
                         switchValidFlag = False
             except ValueError:
                 pass
+            except IndexError:
+                print("Value is out of bounds.")
         if self.perdurakState.switchFlag:
             return True
         if not self.perdurakState.table.allCardsAreCovered() and not self.perdurakState.switchFlag:
