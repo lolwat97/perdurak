@@ -1,6 +1,8 @@
 import itertools
 import random
 
+import readchar
+
 from cards import CardSuit, CardRank, Card
 
 
@@ -49,6 +51,7 @@ class PerdurakState:
         self.substates = list()
         self.deck = Deck(fullDeck = True)
         self.table = Table()
+        self.tableChangeFlag = False
         if humanPlayers:
             self.fillWithPlayers(players)
 
@@ -117,12 +120,12 @@ class PerdurakScreen:
     def drawPlayerCards(self, state, playerNumber):
         print("Player " + str(playerNumber) + "'s cards are")
         for card in state.substates[playerNumber].cards:
-            print(card)
+            print(str(state.substates[playerNumber].cards.index(card)) + ": " + str(card))
 
     def drawTableCards(self, state):
         print("Cards on table:")
         for card in state.table.cards:
-            print(card)
+            print(str(state.table.cards.index(card)) + ": " + str(card))
 
     def drawSpacer(self):
         print("------------------")
@@ -132,10 +135,55 @@ class PerdurakScreen:
 class PerdurakApp:
     def __init__(self, screenParams = (50, 50)):
         self.perdurakScreen = PerdurakScreen(screenParams)
-        self.perdurakState = PerdurakState(humanPlayers = True, players = 3)
+        self.perdurakState = PerdurakState(humanPlayers = True, players = 4)
 
     def run(self):
         self.perdurakState.dealCards(6)
-        self.perdurakState.substates[0].putCard(self.perdurakState.table, self.perdurakState.substates[0].cards[0])
-        self.perdurakState.substates[0].takeTableCards(self.perdurakState.table)
-        self.perdurakScreen.draw(self.perdurakState)
+        while self.perdurakState.deck.cards:
+            for playerNumber in range(len(self.perdurakState.substates)):
+                self.perdurakState.tableChangeFlag = True
+                while self.perdurakState.tableChangeFlag == True:
+                    self.perdurakState.tableChangeFlag = False
+                    attackingPlayer = playerNumber
+                    defendingPlayer = (attackingPlayer+1)%len(self.perdurakState.substates)
+                    self.attackLoop(attackingPlayer, defendingPlayer)
+                    self.defendLoop(defendingPlayer)
+                    for otherPlayerNumber in range(len(self.perdurakState.substates) - 2):
+                        otherPlayer = (defendingPlayer + otherPlayerNumber + 1)%len(self.perdurakState.substates)
+                        self.attackLoop(otherPlayer, defendingPlayer)
+            # self.perdurakState.substates[0].putCard(self.perdurakState.table, self.perdurakState.substates[0].cards[0])
+            # self.perdurakState.substates[0].takeTableCards(self.perdurakState.table)
+            # self.perdurakScreen.draw(self.perdurakState)
+
+    def attackLoop(self, attackingPlayerNumber, defendingPlayerNumber):
+        userInput = None
+        while userInput != "n":
+            print(userInput)
+            print("Player " + str(attackingPlayerNumber) + " is attacking player " + str(defendingPlayerNumber))
+            self.perdurakScreen.draw(self.perdurakState)
+            userInput = input("Choose card to attack with, n to proceed")
+            try:
+                if int(userInput) < len(self.perdurakState.substates[attackingPlayerNumber].cards):
+                    self.perdurakState.substates[attackingPlayerNumber].putCard(self.perdurakState.table, self.perdurakState.substates[attackingPlayerNumber].cards[int(userInput)])
+                    self.perdurakState.tableChangeFlag = True
+            except ValueError:
+                print("Not a number though")
+
+    def defendLoop(self, defendingPlayerNumber):
+        userInput = None
+        while userInput != "n" and userInput != "t":
+            print(userInput)
+            print("Player " + str(defendingPlayerNumber) + " is defending.")
+            self.perdurakScreen.draw(self.perdurakState)
+            userInput = input("Choose a card to defend against, n to proceed, t to take all cards")
+            try:
+                if int(userInput) < len(self.perdurakState.table.cards):
+                    coveredCard = int(userInput)
+                    userInput = input("Choose a card to defend with")
+                    if int(userInput) < len(self.perdurakState.substates[defendingPlayerNumber].cards):
+                        coveringCard = int(userInput)
+                        self.perdurakState.substates[defendingPlayerNumber].defendWithCard(self.perdurakState.table, self.perdurakState.substates[defendingPlayerNumber].cards[coveringCard], self.perdurakState.table.cards[coveredCard])
+                        self.perdurakState.tableChangeFlag = True
+            except ValueError:
+                print("Not a number though")
+
