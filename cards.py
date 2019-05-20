@@ -45,7 +45,7 @@ class Card:
         return Card(tableCard.suit, tableCard.rank)
 
     def __str__(self):
-        return str(self.suit) + ' OF ' + str(self.rank)
+        return str(self.rank) + ' OF ' + str(self.suit)
 
     def __lt__(self, other):
         if (self.rank == other.rank):
